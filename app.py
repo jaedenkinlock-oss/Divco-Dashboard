@@ -7,7 +7,19 @@ for _p in (_root, os.path.join(_root, "src")):
 import streamlit as st
 from datetime import datetime, timezone
 import pandas as pd
-import plotly.graph_objects as go
+try:
+    import plotly.graph_objects as go
+    _PLOTLY_OK = True
+except ModuleNotFoundError:
+    _PLOTLY_OK = False
+    class _GoStub:
+        def __getattr__(self, _): return lambda *a, **k: None
+        def Figure(self, *a, **k): return self
+        def update_layout(self, **k): return self
+        def add_trace(self, _): return self
+        def add_hline(self, **k): return self
+        def update_layout(self, **k): return self
+    go = _GoStub()
 
 from config import (
     DW_NAVY, DW_DARK, DW_STEEL, DW_STEEL_LT, DW_LIGHT, DW_BORDER,
@@ -1099,7 +1111,10 @@ with tab_markets:
         hoverlabel=dict(bgcolor="#0F2040", bordercolor="#2D6AA0",
                         font=dict(color="#fff", size=11, family="Helvetica Neue, Arial")),
     )
-    st.plotly_chart(_mfig, use_container_width=True, config={"displayModeBar": False})
+    if _PLOTLY_OK:
+        st.plotly_chart(_mfig, use_container_width=True, config={"displayModeBar": False})
+    else:
+        st.info("Map unavailable — plotly not installed.")
 
     if _sel and _sel in ALL_MARKETS_DICT:
         _lm = ALL_MARKETS_DICT[_sel]
@@ -1273,7 +1288,10 @@ with tab_macro:
         _f1.add_hline(y=1.5 + gs10_val, line=dict(color="#4a6a8a", width=0.5, dash="dot"),
                       annotation_text="150bps spread threshold", annotation_font=dict(color="#4a6a8a", size=8))
     _f1.update_layout(**_dark_layout("10Y &amp; 2Y TREASURY RATES VS. INNOVATION ECONOMY CAP RATE PROXY  (%)"))
-    st.plotly_chart(_f1, use_container_width=True, config=_cfg)
+    if _PLOTLY_OK:
+        st.plotly_chart(_f1, use_container_width=True, config=_cfg)
+    else:
+        st.info("Charts unavailable — plotly not installed.")
 
     st.markdown('<div class="sec-lbl" style="margin:8px 0 4px;">Inflation &amp; Employment</div>', unsafe_allow_html=True)
     _r2c1, _r2c2 = st.columns(2)
@@ -1284,7 +1302,8 @@ with tab_macro:
         _f2.add_hline(y=2.0, line=dict(color="#1E5C3A", width=1, dash="dash"),
                       annotation_text="Fed Target 2%", annotation_font=dict(color="#1E5C3A", size=9))
         _f2.update_layout(**_dark_layout("CPI INFLATION — ALL ITEMS  (YOY %)", yformat=".1f"))
-        st.plotly_chart(_f2, use_container_width=True, config=_cfg)
+        if _PLOTLY_OK:
+            st.plotly_chart(_f2, use_container_width=True, config=_cfg)
     with _r2c2:
         _f_unem = go.Figure()
         if unem is not None:
@@ -1294,7 +1313,8 @@ with tab_macro:
                 hovertemplate="%{y:.1f}%<extra></extra>",
                 fill="tozeroy", fillcolor="rgba(45,106,160,0.08)"))
         _f_unem.update_layout(**_dark_layout("UNEMPLOYMENT RATE  (%)", yformat=".1f"))
-        st.plotly_chart(_f_unem, use_container_width=True, config=_cfg)
+        if _PLOTLY_OK:
+            st.plotly_chart(_f_unem, use_container_width=True, config=_cfg)
 
     st.markdown('<div class="sec-lbl" style="margin:8px 0 4px;">Supply Pipeline — National Building Permits</div>', unsafe_allow_html=True)
     _f4 = go.Figure()
@@ -1305,7 +1325,8 @@ with tab_macro:
             hovertemplate="%{y:.0f}K units SAAR<extra></extra>"))
     _f4.update_layout(**_dark_layout("NATIONAL BUILDING PERMITS (SAAR, thousands) — leading indicator for new competitive supply", yformat=".0f"))
     _f4.update_layout(bargap=0.1)
-    st.plotly_chart(_f4, use_container_width=True, config=_cfg)
+    if _PLOTLY_OK:
+        st.plotly_chart(_f4, use_container_width=True, config=_cfg)
 
     _all_s = [gs10, gs2, cpi, prm, unem]
     _macro_ts = max(
