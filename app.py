@@ -418,6 +418,11 @@ def load_data():
         raw = fetch_all_fundamentals()
         if raw is None or raw.empty:
             return pd.DataFrame()
+        # Normalize div_yield: yfinance ≥1.2 returns percentage (8.82) not decimal (0.0882)
+        if "div_yield" in raw.columns:
+            raw["div_yield"] = raw["div_yield"].apply(
+                lambda x: x / 100 if (x is not None and x == x and x > 1) else x
+            )
         return build_fundamentals_table(raw)
     except Exception:
         return pd.DataFrame()
